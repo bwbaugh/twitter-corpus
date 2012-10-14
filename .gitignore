@@ -1,0 +1,20 @@
+############
+## Project
+############
+
+# Generated corpus files
+tweet-stream.json
+
+
+############
+## Libraries
+############
+
+tweepy/
+
+
+#############
+## Python
+#############
+
+*.py[co]
