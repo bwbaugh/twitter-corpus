@@ -24,13 +24,17 @@ corpus of tweets for use with Machine Learning, Natural Language Processing,
 and other Human-Centered Computing applications.
 """
 
+import sys
 import threading
 import Queue
 import codecs
+import time
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
+from tweepy.utils import import_simplejson
+json = import_simplejson()
 
 
 # Go to http://dev.twitter.com and create an app. 
@@ -60,11 +64,12 @@ class QueueListener(StreamListener):
 	
     def on_data(self, data):
         """Routes the raw stream data to the appropriate method."""
-        if 'in_reply_to_status_id' in data:
+        data_json = json.loads(data)
+        if 'in_reply_to_status_id' in data_json:
             if self.on_status(data) is False:
                 return False
-        elif 'limit' in data:
-            if self.on_limit(json.loads(data)['limit']['track']) is False:
+        elif 'limit' in data_json:
+            if self.on_limit(data_json['limit']['track']) is False:
                 return False
         return True
 
@@ -81,14 +86,12 @@ class QueueListener(StreamListener):
         print
         print '*** ON ERROR ***'
         print status
-        print
 
     def on_limit(self, track):
         """Prints any limit notice to the console but doesn't halt."""
         print
         print '*** ON LIMIT ***'
         print track
-        print
 
 
 def print_status(listener, seconds=5.0, last_count=0):
@@ -141,6 +144,7 @@ def main():
     try:
         while True:
             listener.queue.join()
+            time.sleep(1.0)
     # Attempt to exit gracefully, but as we are using threads lazily and
     # without much message passing the file writing thread is usually stopped
     # in the middle of writing a record. Therefore, be prepared when reading
@@ -151,6 +155,7 @@ def main():
         stream.disconnect()
         listener.queue.join()
         print 'Exit successful'
+        return
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
