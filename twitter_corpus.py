@@ -132,6 +132,9 @@ def worker(listener, flush_every=500):
         count = 0
         while True:
             data = listener.queue.get()
+            if data is None:
+                listener.queue.task_done()
+                break
             f.write(data + '\n')
             count += 1
             if count == flush_every:
@@ -146,8 +149,8 @@ def main():
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
 
-    t = threading.Thread(target=worker, args=(listener,))
-    t.start()
+    writer_thread = threading.Thread(target=worker, args=(listener,))
+    writer_thread.start()
 
     stream = Stream(auth, listener)
 
@@ -157,17 +160,17 @@ def main():
         try:
             stream.sample()  # blocking!
         except KeyboardInterrupt:
-            print 'KEYBOARD INTERRUPT: Disconnecting and emptying queue.'
+            print 'KEYBOARD INTERRUPT:'
             return
         finally:
-            # Attempt to exit gracefully, but as we are using threads lazily
-            # and without much message passing the file writing thread is
-            # usually stopped in the middle of writing a record. Therefore,
-            # be prepared when reading the corpus to expect the possiblity
-            # that the last line will not contain an entire tweet as it should.
-            # TODO(bwbaugh): See above.
+            print 'Disconnecting stream'
             stream.disconnect()
+            print 'Waiting for last tweets to finish processing'
+            # Send poison pill to writer thread and wait for it to exit
+            listener.queue.put(None)
             listener.queue.join()
+            print 'Waiting for writer thread to finish'
+            writer_thread.join()
             print 'Exit successful'
 
 if __name__ == '__main__':
