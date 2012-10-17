@@ -149,27 +149,26 @@ def main():
     t = threading.Thread(target=worker, args=(listener,))
     t.start()
 
-    stream = Stream(auth, listener)	
-    stream.sample(async=True)
+    stream = Stream(auth, listener)
 
     print_status(listener)
 
-    try:
-        while True:
+    while True:
+        try:
+            stream.sample()  # blocking!
+        except KeyboardInterrupt:
+            print 'KEYBOARD INTERRUPT: Disconnecting and emptying queue.'
+            return
+        finally:
+            # Attempt to exit gracefully, but as we are using threads lazily
+            # and without much message passing the file writing thread is
+            # usually stopped in the middle of writing a record. Therefore,
+            # be prepared when reading the corpus to expect the possiblity
+            # that the last line will not contain an entire tweet as it should.
+            # TODO(bwbaugh): See above.
+            stream.disconnect()
             listener.queue.join()
-            time.sleep(1.0)
-    # Attempt to exit gracefully, but as we are using threads lazily and
-    # without much message passing the file writing thread is usually stopped
-    # in the middle of writing a record. Therefore, be prepared when reading
-    # the corpus to expect the possiblity that the last line will not contain
-    # an entire tweet as it should.
-    # TODO(bwbaugh): See above.
-    except KeyboardInterrupt:
-        print 'KEYBOARD INTERRUPT: Disconnecting, waiting for queue to empty.'
-        stream.disconnect()
-        listener.queue.join()
-        print 'Exit successful'
-        return
+            print 'Exit successful'
 
 if __name__ == '__main__':
     sys.exit(main())
