@@ -29,6 +29,7 @@ import threading
 import Queue
 import codecs
 import time
+import ssl
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -52,6 +53,12 @@ access_token_secret = ""
 # Filename of the corpus that will be used to store the tweets.
 # TODO(bwbaugh): Add feature to make the file rotatable by time or size.
 corpus_fname = "tweet-stream.json"
+
+# Number of seconds to wait after an exception before restarting the stream.
+tcpip_delay = 0.25
+MAX_TCPIP_TIMEOUT = 16
+http_delay = 5
+MAX_HTTP_TIMEOUT = 320
 
 
 class QueueListener(StreamListener):
@@ -162,6 +169,10 @@ def main():
         except KeyboardInterrupt:
             print 'KEYBOARD INTERRUPT:'
             return
+        except ssl.SSLError:
+            print 'SSL Error: Restarting after {} seconds.'.format(tcpip_delay)
+            time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
+            tcpip_delay += 0.25
         finally:
             print 'Disconnecting stream'
             stream.disconnect()
