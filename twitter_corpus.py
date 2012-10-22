@@ -29,7 +29,8 @@ import threading
 import Queue
 import codecs
 import time
-import ssl
+import socket
+import httplib
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -169,8 +170,9 @@ def main():
         except KeyboardInterrupt:
             print 'KEYBOARD INTERRUPT:'
             return
-        except ssl.SSLError:
-            print 'SSL Error: Restarting after {} seconds.'.format(tcpip_delay)
+        except (socket.error, httplib.HTTPException):
+            print ('TCP/IP Error: Restarting after '
+                   '{} seconds.'.format(tcpip_delay))
             time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
             tcpip_delay += 0.25
         finally:
