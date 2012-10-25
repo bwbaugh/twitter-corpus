@@ -41,7 +41,7 @@ json = import_simplejson()
 
 # TODO(bwbaugh): Make the following global vars loadable from a config file.
 
-# Go to http://dev.twitter.com and create an app. 
+# Go to http://dev.twitter.com and create an app.
 # The consumer key and secret will be generated for you after
 consumer_key = ""
 consumer_secret = ""
@@ -75,7 +75,7 @@ class QueueListener(StreamListener):
         super(QueueListener, self).__init__()
         self.num_handled = 0
         self.queue = Queue.Queue()
-	
+
     def on_data(self, data):
         """Routes the raw stream data to the appropriate method."""
         data_json = json.loads(data)
@@ -119,12 +119,12 @@ def print_status(listener, seconds=5.0, last_count=0):
     """Call once to repeatedly display statistics every N seconds."""
     num_handled = listener.num_handled
     qsize = listener.queue.qsize()
-    
+
     t = threading.Timer(seconds, print_status, args=[listener, seconds,
                                                      num_handled])
     t.daemon = True
     t.start()
-    
+
     print
     print 'TOTAL TWEETS HANDLED: %d' % num_handled
     print ('NUM IN THE PAST %d seconds: %d (%d per sec)' %
@@ -171,6 +171,7 @@ def main():
             print 'KEYBOARD INTERRUPT:'
             return
         except (socket.error, httplib.HTTPException):
+            global tcpip_delay
             print ('TCP/IP Error: Restarting after '
                    '{} seconds.'.format(tcpip_delay))
             time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
