@@ -143,7 +143,10 @@ def worker(listener, flush_every=500):
             if data is None:
                 listener.queue.task_done()
                 break
-            f.write(data + '\n')
+            try:
+                f.write(data + '\n')
+            except UnicodeDecodeError:
+                print 'ERROR: UnicodeDecodeError ... continuing.'
             count += 1
             if count == flush_every:
                 f.flush()
