@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Brian Wesley Baugh
+# Copyright (C) 2012-2013 Wesley Baugh
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 3.0 Unported License.
