@@ -167,28 +167,29 @@ def main():
 
     print_status(listener)
 
-    while True:
-        try:
-            stream.sample()  # blocking!
-        except KeyboardInterrupt:
-            print 'KEYBOARD INTERRUPT:'
-            return
-        except (socket.error, httplib.HTTPException):
-            global tcpip_delay
-            print ('TCP/IP Error: Restarting after '
-                   '{} seconds.'.format(tcpip_delay))
-            time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
-            tcpip_delay += 0.25
-        finally:
-            print 'Disconnecting stream'
-            stream.disconnect()
-            print 'Waiting for last tweets to finish processing'
-            # Send poison pill to writer thread and wait for it to exit
-            listener.queue.put(None)
-            listener.queue.join()
-            print 'Waiting for writer thread to finish'
-            writer_thread.join()
-            print 'Exit successful'
+    try:
+        while True:
+            try:
+                stream.sample()  # blocking!
+            except KeyboardInterrupt:
+                print 'KEYBOARD INTERRUPT:'
+                return
+            except (socket.error, httplib.HTTPException):
+                global tcpip_delay
+                print ('TCP/IP Error: Restarting after '
+                       '{} seconds.'.format(tcpip_delay))
+                time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
+                tcpip_delay += 0.25
+    finally:
+        print 'Disconnecting stream'
+        stream.disconnect()
+        print 'Waiting for last tweets to finish processing'
+        # Send poison pill to writer thread and wait for it to exit
+        listener.queue.put(None)
+        listener.queue.join()
+        print 'Waiting for writer thread to finish'
+        writer_thread.join()
+        print 'Exit successful'
 
 if __name__ == '__main__':
     sys.exit(main())
