@@ -177,7 +177,7 @@ def main():
             except (socket.error, httplib.HTTPException):
                 global tcpip_delay
                 print ('TCP/IP Error: Restarting after '
-                       '{} seconds.'.format(tcpip_delay))
+                       '{0} seconds.'.format(tcpip_delay))
                 time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
                 tcpip_delay += 0.25
     finally:
