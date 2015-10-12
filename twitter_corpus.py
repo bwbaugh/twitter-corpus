@@ -23,7 +23,6 @@ This file can then be processed and filtered as necessary to create a
 corpus of tweets for use with Machine Learning, Natural Language Processing,
 and other Human-Centered Computing applications.
 """
-
 import sys
 import threading
 import Queue
@@ -32,28 +31,16 @@ import time
 import socket
 import httplib
 
-from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
+from tweepy.streaming import StreamListener
 from tweepy.utils import import_simplejson
+import staticconf
 json = import_simplejson()
 
 
-# TODO(bwbaugh): Make the following global vars loadable from a config file.
-
-# Go to http://dev.twitter.com and create an app.
-# The consumer key and secret will be generated for you after
-consumer_key = ""
-consumer_secret = ""
-
-# After the step above, you will be redirected to your app's page.
-# Create an access token under the the "Your access token" section
-access_token = ""
-access_token_secret = ""
-
-# Filename of the corpus that will be used to store the tweets.
-# TODO(bwbaugh): Add feature to make the file rotatable by time or size.
-corpus_fname = "tweet-stream.json"
+# Configuration file that contains the Twitter API credentials.
+CONFIG_FILE = 'config.yaml'
 
 # Number of seconds to wait after an exception before restarting the stream.
 tcpip_delay = 0.25
@@ -136,7 +123,12 @@ def print_status(listener, seconds=5.0, last_count=0):
 
 def worker(listener, flush_every=500):
     """Takes tweets off of the queue and writes them to a file."""
-    with codecs.open(corpus_fname, mode='a', encoding='utf-8') as f:
+    # TODO(bwbaugh): Configure save location with CLI option.
+    with codecs.open(
+        staticconf.read_string('local_corpus_filename'),
+        mode='a',
+        encoding='utf-8',
+    ) as f:
         count = 0
         while True:
             data = listener.queue.get()
@@ -156,9 +148,16 @@ def worker(listener, flush_every=500):
 
 def main():
     """Connects to the stream and starts threads to write them to a file."""
+    staticconf.YamlConfiguration(CONFIG_FILE)
     listener = QueueListener()
-    auth = OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
+    auth = OAuthHandler(
+        staticconf.read_string('twitter.consumer_key'),
+        staticconf.read_string('twitter.consumer_secret'),
+    )
+    auth.set_access_token(
+        staticconf.read_string('twitter.access_token'),
+        staticconf.read_string('twitter.access_token_secret'),
+    )
 
     writer_thread = threading.Thread(target=worker, args=(listener,))
     writer_thread.start()

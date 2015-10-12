@@ -1,0 +1,13 @@
+# Twitter account info.
+twitter:
+  # Go to http://dev.twitter.com and create an app.
+  # The consumer key and secret will be generated for you after
+  consumer_key: api_key_from_application_settings
+  consumer_secret: api_secret_from_application_settings
+  # After the step above, you will be redirected to your app's page.
+  # Create an access token under the the "Your access token" section
+  access_token: access_token_from_your_access_token
+  access_token_secret: access_token_secret_from_your_access_token
+
+# Filename of the corpus that will be used to store the tweets.
+local_corpus_filename: tweet-stream.json
