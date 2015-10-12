@@ -23,10 +23,11 @@ This file can then be processed and filtered as necessary to create a
 corpus of tweets for use with Machine Learning, Natural Language Processing,
 and other Human-Centered Computing applications.
 """
+from __future__ import print_function
+
 import sys
 import threading
 import Queue
-import codecs
 import time
 import socket
 import httplib
@@ -84,9 +85,7 @@ class QueueListener(StreamListener):
 
     def on_error(self, status):
         """Prints any error to the console but does not halt the stream."""
-        print
-        print '*** ON ERROR ***'
-        print status
+        print('ON ERROR:', status, file=sys.stderr)
 
     def on_limit(self, track):
         """Prints any limit notice to the console but doesn't halt.
@@ -97,9 +96,7 @@ class QueueListener(StreamListener):
         in total matched the filter but were not sent since the stream
         was opened.
         """
-        print
-        print '*** ON LIMIT ***'
-        print track
+        print('ON LIMIT:', track, file=sys.stderr)
 
 
 def print_status(listener, seconds=5.0, last_count=0):
@@ -112,38 +109,39 @@ def print_status(listener, seconds=5.0, last_count=0):
     t.daemon = True
     t.start()
 
-    print
-    print 'TOTAL TWEETS HANDLED: %d' % num_handled
-    print ('NUM IN THE PAST %d seconds: %d (%d per sec)' %
-           (seconds, num_handled - last_count,
-            (num_handled - last_count) / seconds))
+    print('\nTOTAL TWEETS HANDLED:', num_handled, file=sys.stderr)
+    print(
+        'NUM IN THE PAST {seconds} seconds: {delta} ({rate} per sec)'.format(
+            seconds=seconds,
+            delta=num_handled - last_count,
+            rate=(num_handled - last_count) / seconds,
+        ),
+        file=sys.stderr,
+    )
     if qsize > 0:
-        print 'QUEUE SIZE: %d' % qsize
+        print('QUEUE SIZE:', qsize, file=sys.stderr)
 
 
 def worker(listener, flush_every=500):
     """Takes tweets off of the queue and writes them to a file."""
-    # TODO(bwbaugh): Configure save location with CLI option.
-    with codecs.open(
-        staticconf.read_string('local_corpus_filename'),
-        mode='a',
-        encoding='utf-8',
-    ) as f:
-        count = 0
-        while True:
-            data = listener.queue.get()
-            if data is None:
-                listener.queue.task_done()
-                break
-            try:
-                f.write(data + '\n')
-            except UnicodeDecodeError:
-                print 'ERROR: UnicodeDecodeError ... continuing.'
-            count += 1
-            if count == flush_every:
-                f.flush()
-                count = 0
+    count = 0
+    while True:
+        data = listener.queue.get()
+        if data is None:
             listener.queue.task_done()
+            break
+        try:
+            print(data)
+        except UnicodeDecodeError:
+            print(
+                'ERROR: UnicodeDecodeError ... continuing.',
+                file=sys.stderr,
+            )
+        count += 1
+        if count == flush_every:
+            sys.stdout.flush()
+            count = 0
+        listener.queue.task_done()
 
 
 def main():
@@ -171,24 +169,29 @@ def main():
             try:
                 stream.sample()  # blocking!
             except KeyboardInterrupt:
-                print 'KEYBOARD INTERRUPT:'
+                print('KEYBOARD INTERRUPT', file=sys.stderr)
                 return
             except (socket.error, httplib.HTTPException):
                 global tcpip_delay
-                print ('TCP/IP Error: Restarting after '
-                       '{0} seconds.'.format(tcpip_delay))
+                print(
+                    'TCP/IP Error: Restarting after {delay} seconds.'.format(
+                        delay=tcpip_delay,
+                    ),
+                    file=sys.stderr,
+                )
                 time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
                 tcpip_delay += 0.25
     finally:
-        print 'Disconnecting stream'
+        print('Disconnecting stream', file=sys.stderr)
         stream.disconnect()
-        print 'Waiting for last tweets to finish processing'
+        print('Waiting for last tweets to finish processing', file=sys.stderr)
         # Send poison pill to writer thread and wait for it to exit
         listener.queue.put(None)
         listener.queue.join()
-        print 'Waiting for writer thread to finish'
+        print('Waiting for writer thread to finish', file=sys.stderr)
         writer_thread.join()
-        print 'Exit successful'
+        print('Exit successful', file=sys.stderr)
+
 
 if __name__ == '__main__':
     sys.exit(main())

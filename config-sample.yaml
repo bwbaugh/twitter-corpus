@@ -8,6 +8,3 @@ twitter:
   # Create an access token under the the "Your access token" section
   access_token: access_token_from_your_access_token
   access_token_secret: access_token_secret_from_your_access_token
-
-# Filename of the corpus that will be used to store the tweets.
-local_corpus_filename: tweet-stream.json
